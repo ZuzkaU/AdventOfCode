@@ -9,12 +9,10 @@ def init():
 
 def make_board(lines):
     board = []
-    index = 0
-    for l in lines:
+    for index, l in enumerate(lines):
         board.append([])
         for num in l.strip().split():
             board[index].append(int(num))
-        index += 1
     return board
 
 def play(board, numbers):

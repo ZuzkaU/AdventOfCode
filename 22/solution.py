@@ -16,10 +16,11 @@ def parse(lines):
 class Cube:
     def __init__(self, xs, xe, ys, ye, zs, ze, lit=False):
         self.borders = (xs, xe, ys, ye, zs, ze)
+        self.valid = xs <= xe and ys <= ye and zs <= ze
         self.lit = lit
         self.has_children = False
         self.children = None
-        self.prime = xe - xs < 2 or ye - ys < 2 or ze - zs < 2
+        self.prime = xe - xs < 2 and ye - ys < 2 and ze - zs < 2
         if self.prime:
             self.pixels = {}
             for x in range(xs, xe + 1):
@@ -32,6 +33,7 @@ class Cube:
         xs, xe, ys, ye, zs, ze = self.borders
         xxs, yys, zzs = max(xxs, xs), max(yys, ys), max(zzs, zs)
         xxe, yye, zze = min(xxe, xe), min(yye, ye), min(zze, ze)
+        borders = xxs, xxe, yys, yye, zzs, zze
         if xxs > xxe or yys > yye or zzs > zze:
             return
         elif self.has_children:
@@ -39,7 +41,7 @@ class Cube:
                 c.change(op, borders)
         elif xs < xxs or xxe < xe or ys < yys or yye < ye or zs < zzs or zze < ze:
             if not self.prime:
-                self.split()
+                self.split(borders)
                 for c in self.children:
                     c.change(op, borders)
             else:
@@ -59,22 +61,36 @@ class Cube:
             raise Exception("something went wrong")
         return
 
-    def split(self):
+    @staticmethod
+    def make_border(start, end, middle_start, middle_end):
+        if start < middle_start:
+            return middle_start - 1
+        elif middle_end < end:
+            return middle_end
+        else:
+            return end
+
+    def split(self, borders):
         if self.has_children:
             raise Exception("can't split parent")
+        xxs, xxe, yys, yye, zzs, zze = borders
         xs, xe, ys, ye, zs, ze = self.borders
+        hx, hy, hz = Cube.make_border(xs, xe, xxs, xxe), Cube.make_border(ys, ye, yys, yye), Cube.make_border(zs, ze, zzs, zze)
         if self.prime:
             return False
-        hx, hy, hz = (xs + xe) // 2, (ys + ye) // 2, (zs + ze) // 2
-        self.children = [Cube(xs, hx, ys, hy, zs, hz, self.lit),
-                         Cube(hx + 1, xe, ys, hy, zs, hz, self.lit),
-                         Cube(xs, hx, hy + 1, ye, zs, hz, self.lit),
-                         Cube(hx + 1, xe, hy + 1, ye, zs, hz, self.lit),
-                         Cube(xs, hx, ys, hy, hz + 1, ze, self.lit),
-                         Cube(hx + 1, xe, ys, hy, hz + 1, ze, self.lit),
-                         Cube(xs, hx, hy + 1, ye, hz + 1, ze, self.lit),
-                         Cube(hx + 1, xe, hy + 1, ye, hz + 1, ze, self.lit),
-                         ]
+        self.children = []
+        cubes = [Cube(xs, hx, ys, hy, zs, hz, self.lit),
+                 Cube(hx + 1, xe, ys, hy, zs, hz, self.lit),
+                 Cube(xs, hx, hy + 1, ye, zs, hz, self.lit),
+                 Cube(hx + 1, xe, hy + 1, ye, zs, hz, self.lit),
+                 Cube(xs, hx, ys, hy, hz + 1, ze, self.lit),
+                 Cube(hx + 1, xe, ys, hy, hz + 1, ze, self.lit),
+                 Cube(xs, hx, hy + 1, ye, hz + 1, ze, self.lit),
+                 Cube(hx + 1, xe, hy + 1, ye, hz + 1, ze, self.lit),
+                 ]
+        for c in cubes:
+            if c.valid:
+                self.children.append(c)
         self.has_children = True
         return True
 
